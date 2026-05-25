@@ -240,6 +240,23 @@ export const triggers: BlockDefinition[] = [
     hasOutput: true
   },
   {
+    id: 'on_slash_command',
+    type: 'trigger',
+    label: 'Slash Command',
+    icon: 'terminal-square',
+    color: '#FBBF24',
+    description: 'Срабатывает при использовании слеш-команды /',
+    tags: ['слеш', 'slash', 'команда', '/'],
+    fields: [
+      { key: 'name', label: 'Название команды', type: 'string', placeholder: 'ping', defaultValue: '' },
+      { key: 'description', label: 'Описание', type: 'string', placeholder: 'Пинг-понг!', defaultValue: '' },
+      { key: 'options', label: 'Опции (JSON)', type: 'string', placeholder: '[{"name":"user","description":"User","type":6,"required":true}]', defaultValue: '[]' }
+    ],
+    hasInput: false,
+    hasOutput: true,
+    outputType: 'interaction'
+  },
+  {
     id: 'on_interaction',
     type: 'trigger',
     label: 'Взаимодействие',

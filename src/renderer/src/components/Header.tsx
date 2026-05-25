@@ -1,11 +1,12 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { useEditorStore } from '../store/editorStore'
 import { useProjectStore } from '../store/projectStore'
 import { generateBot } from '../generators/botGenerator'
+import { getBlockById } from '../data'
 import { Button } from './ui/Button'
 import {
   Undo2, Redo2, Save, Code2, Play, Pencil,
-  Settings, Lock, Unlock
+  Settings, Lock, Unlock, Terminal, Upload
 } from 'lucide-react'
 
 export function Header() {
@@ -17,11 +18,12 @@ export function Header() {
     nodes, edges,
     clearProject, setWelcomeScreen
   } = useEditorStore()
-  const { saveProject, toggleCodePreview } = useProjectStore()
+  const { saveProject, toggleCodePreview, toggleBotPanel } = useProjectStore()
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState(projectName)
   const [showToken, setShowToken] = useState(false)
   const [showConfig, setShowConfig] = useState(false)
+  const [deploying, setDeploying] = useState(false)
 
   const handleSave = async () => {
     await saveProject(nodes, edges)
@@ -47,6 +49,52 @@ export function Header() {
     clearProject()
     setWelcomeScreen(true)
   }
+
+  const handleDeploy = useCallback(async () => {
+    if (!botToken) { alert('Please set a bot token first'); return }
+    setDeploying(true)
+    try {
+      const slashNodes = nodes.filter(n => {
+        const def = getBlockById(n.data.definitionId)
+        return def?.id === 'on_slash_command'
+      })
+      if (slashNodes.length === 0) { alert('No slash command blocks found. Add an on_slash_command trigger.'); setDeploying(false); return }
+
+      const commands = slashNodes.map(n => {
+        const p = n.data.properties || {}
+        let opts: any[] = []
+        try { opts = JSON.parse(p.options || '[]') } catch {}
+        const cmd: any = { name: p.name || 'command', description: p.description || 'No description' }
+        if (opts.length > 0) cmd.options = opts
+        return cmd
+      })
+
+      if (window.electronAPI?.bot?.deploy) {
+        const result = await window.electronAPI.bot.deploy(botToken, commands)
+        if (result.success) {
+          alert(`Successfully deployed ${result.count} slash command(s)!`)
+        } else {
+          alert('Deploy failed: ' + result.error)
+        }
+      } else {
+        // Fallback: use fetch directly
+        const response = await fetch('https://discord.com/api/v10/applications/@me/commands', {
+          method: 'PUT',
+          headers: { 'Authorization': `Bot ${botToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(commands)
+        })
+        if (response.ok) {
+          alert('Successfully deployed slash commands!')
+        } else {
+          const err = await response.text()
+          alert('Deploy failed: ' + err)
+        }
+      }
+    } catch (e: any) {
+      alert('Deploy error: ' + e.message)
+    }
+    setDeploying(false)
+  }, [nodes, botToken])
 
   return (
     <header className="h-11 bg-[#1A1A2E]/85 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-3 shrink-0 z-50">
@@ -125,6 +173,14 @@ export function Header() {
         <Button variant="ghost" size="sm" icon={<Code2 className="w-3.5 h-3.5" />} onClick={toggleCodePreview} title="Preview code" />
 
         <div className="w-px h-5 bg-white/10 mx-1" />
+
+        <Button variant="ghost" size="sm" icon={<Terminal className="w-3.5 h-3.5" />} onClick={toggleBotPanel} title="Bot Console" />
+
+        <div className="w-px h-5 bg-white/10 mx-1" />
+
+        <Button variant="ghost" size="sm" icon={<Upload className="w-3.5 h-3.5" />} onClick={handleDeploy} title="Deploy slash commands to Discord" disabled={deploying}>
+          {deploying ? 'Deploying...' : 'Deploy'}
+        </Button>
 
         <Button variant="primary" size="sm" icon={<Play className="w-3.5 h-3.5" />} onClick={handleExport} title="Export bot code">
           Export

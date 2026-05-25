@@ -4,6 +4,7 @@ import { getBlockById } from '../data'
 import { Input, Select, Toggle } from './ui/Input'
 import { X, Settings, Trash2, Info } from 'lucide-react'
 import { Button } from './ui/Button'
+import { EmbedPreview } from './EmbedPreview'
 import type { FieldDef } from '../types'
 
 function FieldRenderer({ field, value, onChange }: { field: FieldDef; value: any; onChange: (key: string, val: any) => void }) {
@@ -56,6 +57,22 @@ function FieldRenderer({ field, value, onChange }: { field: FieldDef; value: any
   }
 }
 
+function EmbedPreviewRenderer({ props }: { props: Record<string, any> }) {
+  return (
+    <div className="space-y-2 pt-2 border-t border-white/5">
+      <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Preview</div>
+      <EmbedPreview
+        title={props.title}
+        description={props.description}
+        color={props.color}
+        footer={props.footer}
+        image_url={props.image_url}
+        thumbnail_url={props.thumbnail_url}
+      />
+    </div>
+  )
+}
+
 export function RightSidebar() {
   const { selectedNodeId, nodes, updateNodeData, removeSelected, selectNode } = useEditorStore()
   const selectedNode = nodes.find(n => n.id === selectedNodeId)
@@ -93,10 +110,67 @@ export function RightSidebar() {
             <p>No configurable properties.</p>
           </div>
         ) : (
-          def.fields.map((field) => (
-            <FieldRenderer key={field.key} field={field} value={props[field.key]} onChange={(k, v) => updateNodeData(selectedNode.id, { [k]: v })} />
-          ))
+          <>
+            {def.fields.map((field) => (
+              <FieldRenderer key={field.key} field={field} value={props[field.key]} onChange={(k, v) => updateNodeData(selectedNode.id, { [k]: v })} />
+            ))}
+            {def.id === 'create_embed' && (
+              <EmbedPreviewRenderer props={props} />
+            )}
+            {def.id === 'send_components' && (
+              <div className="space-y-2 pt-2 border-t border-white/5">
+                <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Component Preview</div>
+                <div className="bg-[#2B2D31] rounded-md p-2 space-y-1">
+                  {(() => {
+                    try {
+                      const comps = JSON.parse(props.components || '[]')
+                      return comps.length === 0 ? (
+                        <div className="text-[10px] text-gray-500 italic">No components defined</div>
+                      ) : (
+                        comps.map((comp: any, i: number) => (
+                          <div key={i} className="bg-[#1E1E2E] rounded px-2 py-1 text-[10px] text-gray-300 flex items-center gap-2">
+                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${
+                              comp.type === 'button' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-emerald-500/20 text-emerald-300'
+                            }`}>
+                              {comp.type === 'button' ? 'Btn' : 'Select'}
+                            </span>
+                            <span>{comp.label || comp.custom_id || '?'}</span>
+                          </div>
+                        ))
+                      )
+                    } catch {
+                      return <div className="text-[10px] text-red-400">Invalid JSON</div>
+                    }
+                  })()}
+                </div>
+              </div>
+            )}
+            {def.id === 'respond_modal' && (
+              <div className="space-y-2 pt-2 border-t border-white/5">
+                <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Modal Preview</div>
+                <div className="bg-[#2B2D31] rounded-md p-2 space-y-1">
+                  {(() => {
+                    try {
+                      const inputs = JSON.parse(props.inputs || '[]')
+                      return inputs.length === 0 ? (
+                        <div className="text-[10px] text-gray-500 italic">No inputs defined</div>
+                      ) : (
+                        inputs.map((inp: any, i: number) => (
+                          <div key={i} className="bg-[#1E1E2E] rounded px-2 py-1 text-[10px] text-gray-300">
+                            <span className="text-gray-500">#{i + 1}</span> {inp.label || inp.custom_id || 'Input'}
+                          </div>
+                        ))
+                      )
+                    } catch {
+                      return <div className="text-[10px] text-red-400">Invalid JSON</div>
+                    }
+                  })()}
+                </div>
+              </div>
+            )}
+          </>
         )}
+        </div>
 
         <div className="pt-2 border-t border-white/5">
           <div className="text-[10px] text-gray-600 font-medium uppercase tracking-wider mb-2">Block Info</div>
@@ -111,7 +185,6 @@ export function RightSidebar() {
             </div>
           </div>
         </div>
-      </div>
 
       <div className="p-2 border-t border-white/5">
         <Button variant="danger" size="sm" icon={<Trash2 className="w-3.5 h-3.5" />} onClick={removeSelected} className="w-full">

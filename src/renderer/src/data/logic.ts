@@ -126,6 +126,20 @@ export const logicBlocks: BlockDefinition[] = [
     hasOutput: false
   },
   {
+    id: 'group',
+    type: 'logic',
+    label: 'Группа',
+    icon: 'folder-plus',
+    color: '#A78BFA',
+    description: 'Группирует блоки визуально (не влияет на код)',
+    tags: ['группа', 'group', 'организация'],
+    fields: [
+      { key: 'label', label: 'Название группы', type: 'string', placeholder: 'Моя группа', defaultValue: 'Группа' }
+    ],
+    hasInput: false,
+    hasOutput: false
+  },
+  {
     id: 'custom_code',
     type: 'logic',
     label: 'Свой код',

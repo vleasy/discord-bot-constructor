@@ -1,6 +1,6 @@
 {
   "name": "discord-bot-constructor",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Discord Bot Constructor - Visual flow-based bot builder",
   "main": "./out/main/index.js",
   "scripts": {

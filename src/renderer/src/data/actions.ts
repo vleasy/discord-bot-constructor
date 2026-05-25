@@ -616,6 +616,379 @@ export const actions: BlockDefinition[] = [
     hasInput: true,
     hasOutput: true
   },
+  // ─── Экономика ───────────────────────────────────
+  {
+    id: 'economy_balance',
+    type: 'action',
+    label: 'Get Balance',
+    icon: 'dollar-sign',
+    color: '#22D3EE',
+    description: 'Получает баланс пользователя',
+    tags: ['экономика', 'баланс', 'money', 'economy'],
+    fields: [
+      { key: 'target', label: 'Кого', type: 'select', defaultValue: 'author',
+        options: [
+          { label: 'Автора сообщения', value: 'author' },
+          { label: 'Упомянутого пользователя', value: 'mentioned' },
+          { label: 'По ID', value: 'by_id' }
+        ]
+      },
+      { key: 'user_id', label: 'ID пользователя', type: 'string', placeholder: '', defaultValue: '' },
+      { key: 'var_name', label: 'Сохранить в переменную', type: 'string', placeholder: 'balance', defaultValue: '' }
+    ],
+    hasInput: true,
+    hasOutput: true
+  },
+  {
+    id: 'economy_add',
+    type: 'action',
+    label: 'Add Money',
+    icon: 'plus-circle',
+    color: '#22D3EE',
+    description: 'Добавляет деньги пользователю',
+    tags: ['экономика', 'добавить', 'add', 'money'],
+    fields: [
+      { key: 'target', label: 'Кому', type: 'select', defaultValue: 'author',
+        options: [
+          { label: 'Автору сообщения', value: 'author' },
+          { label: 'Упомянутому пользователю', value: 'mentioned' },
+          { label: 'По ID', value: 'by_id' }
+        ]
+      },
+      { key: 'user_id', label: 'ID пользователя', type: 'string', placeholder: '', defaultValue: '' },
+      { key: 'amount', label: 'Сумма', type: 'number', defaultValue: 100 }
+    ],
+    hasInput: true,
+    hasOutput: true
+  },
+  {
+    id: 'economy_remove',
+    type: 'action',
+    label: 'Remove Money',
+    icon: 'minus-circle',
+    color: '#22D3EE',
+    description: 'Забирает деньги у пользователя',
+    tags: ['экономика', 'забрать', 'remove', 'money'],
+    fields: [
+      { key: 'target', label: 'У кого', type: 'select', defaultValue: 'author',
+        options: [
+          { label: 'У автора сообщения', value: 'author' },
+          { label: 'У упомянутого пользователя', value: 'mentioned' },
+          { label: 'По ID', value: 'by_id' }
+        ]
+      },
+      { key: 'user_id', label: 'ID пользователя', type: 'string', placeholder: '', defaultValue: '' },
+      { key: 'amount', label: 'Сумма', type: 'number', defaultValue: 100 }
+    ],
+    hasInput: true,
+    hasOutput: true
+  },
+  {
+    id: 'economy_transfer',
+    type: 'action',
+    label: 'Transfer Money',
+    icon: 'arrow-left-right',
+    color: '#22D3EE',
+    description: 'Переводит деньги от одного пользователя другому',
+    tags: ['экономика', 'перевод', 'transfer', 'pay'],
+    fields: [
+      { key: 'target', label: 'Кому', type: 'select', defaultValue: 'mentioned',
+        options: [
+          { label: 'Упомянутому пользователю', value: 'mentioned' },
+          { label: 'По ID', value: 'by_id' }
+        ]
+      },
+      { key: 'user_id', label: 'ID пользователя', type: 'string', placeholder: '', defaultValue: '' },
+      { key: 'amount', label: 'Сумма', type: 'number', defaultValue: 100 }
+    ],
+    hasInput: true,
+    hasOutput: true
+  },
+  {
+    id: 'economy_daily',
+    type: 'action',
+    label: 'Daily Reward',
+    icon: 'calendar-check',
+    color: '#22D3EE',
+    description: 'Выдаёт ежедневную награду (раз в 24ч)',
+    tags: ['экономика', 'ежедневно', 'daily', 'reward'],
+    fields: [
+      { key: 'amount', label: 'Сумма награды', type: 'number', defaultValue: 200 }
+    ],
+    hasInput: true,
+    hasOutput: true
+  },
+  {
+    id: 'economy_set',
+    type: 'action',
+    label: 'Set Balance',
+    icon: 'equal',
+    color: '#22D3EE',
+    description: 'Устанавливает баланс пользователя',
+    tags: ['экономика', 'установить', 'set', 'balance'],
+    fields: [
+      { key: 'target', label: 'Кому', type: 'select', defaultValue: 'author',
+        options: [
+          { label: 'Автору сообщения', value: 'author' },
+          { label: 'Упомянутому пользователю', value: 'mentioned' },
+          { label: 'По ID', value: 'by_id' }
+        ]
+      },
+      { key: 'user_id', label: 'ID пользователя', type: 'string', placeholder: '', defaultValue: '' },
+      { key: 'amount', label: 'Новый баланс', type: 'number', defaultValue: 0 }
+    ],
+    hasInput: true,
+    hasOutput: true
+  },
+  {
+    id: 'economy_leaderboard',
+    type: 'action',
+    label: 'Economy Leaderboard',
+    icon: 'trophy',
+    color: '#22D3EE',
+    description: 'Получает топ пользователей по балансу',
+    tags: ['экономика', 'топ', 'leaderboard', 'lb'],
+    fields: [
+      { key: 'var_name', label: 'Сохранить в переменную', type: 'string', placeholder: 'lb', defaultValue: '' }
+    ],
+    hasInput: true,
+    hasOutput: true
+  },
+  // ─── Leveling ────────────────────────────────────
+  {
+    id: 'leveling_add_xp',
+    type: 'action',
+    label: 'Add XP',
+    icon: 'plus-circle',
+    color: '#22D3EE',
+    description: 'Добавляет опыт пользователю',
+    tags: ['левелинг', 'опыт', 'xp', 'level'],
+    fields: [
+      { key: 'target', label: 'Кому', type: 'select', defaultValue: 'author',
+        options: [
+          { label: 'Автору сообщения', value: 'author' },
+          { label: 'Упомянутому пользователю', value: 'mentioned' },
+          { label: 'По ID', value: 'by_id' }
+        ]
+      },
+      { key: 'user_id', label: 'ID пользователя', type: 'string', placeholder: '', defaultValue: '' },
+      { key: 'amount', label: 'Количество XP', type: 'number', defaultValue: 15 }
+    ],
+    hasInput: true,
+    hasOutput: true
+  },
+  {
+    id: 'leveling_get_level',
+    type: 'action',
+    label: 'Get Level',
+    icon: 'arrow-up',
+    color: '#22D3EE',
+    description: 'Получает уровень и XP пользователя',
+    tags: ['левелинг', 'уровень', 'level', 'rank'],
+    fields: [
+      { key: 'target', label: 'Кого', type: 'select', defaultValue: 'author',
+        options: [
+          { label: 'Автора сообщения', value: 'author' },
+          { label: 'Упомянутого пользователя', value: 'mentioned' },
+          { label: 'По ID', value: 'by_id' }
+        ]
+      },
+      { key: 'user_id', label: 'ID пользователя', type: 'string', placeholder: '', defaultValue: '' },
+      { key: 'var_name', label: 'Сохранить в переменную (объект {xp, level})', type: 'string', placeholder: 'rank', defaultValue: '' }
+    ],
+    hasInput: true,
+    hasOutput: true
+  },
+  {
+    id: 'leveling_leaderboard',
+    type: 'action',
+    label: 'Level Leaderboard',
+    icon: 'trophy',
+    color: '#22D3EE',
+    description: 'Получает топ пользователей по уровню',
+    tags: ['левелинг', 'топ', 'leaderboard', 'lb'],
+    fields: [
+      { key: 'var_name', label: 'Сохранить в переменную', type: 'string', placeholder: 'lb', defaultValue: '' }
+    ],
+    hasInput: true,
+    hasOutput: true
+  },
+  // ─── Ticket System ──────────────────────────────
+  {
+    id: 'ticket_create_panel',
+    type: 'action',
+    label: 'Ticket Panel',
+    icon: 'ticket',
+    color: '#22D3EE',
+    description: 'Создаёт панель с кнопкой для создания тикетов',
+    tags: ['тикет', 'ticket', 'support', 'panel'],
+    fields: [
+      { key: 'channel_id', label: 'ID канала для панели', type: 'string', placeholder: '123456789', defaultValue: '' },
+      { key: 'title', label: 'Заголовок эмбеда', type: 'string', placeholder: 'Support Ticket', defaultValue: 'Support Ticket' },
+      { key: 'description', label: 'Описание', type: 'string', placeholder: 'Нажмите кнопку для создания тикета', defaultValue: 'Нажмите кнопку для создания тикета' },
+      { key: 'button_label', label: 'Текст кнопки', type: 'string', placeholder: 'Создать тикет', defaultValue: 'Создать тикет' },
+      { key: 'category_id', label: 'ID категории для тикетов', type: 'string', placeholder: 'ID категории', defaultValue: '' },
+      { key: 'support_role', label: 'ID роли поддержки', type: 'string', placeholder: 'ID роли', defaultValue: '' }
+    ],
+    hasInput: true,
+    hasOutput: false
+  },
+  {
+    id: 'ticket_create',
+    type: 'action',
+    label: 'Create Ticket',
+    icon: 'plus-square',
+    color: '#22D3EE',
+    description: 'Создаёт канал-тикет для пользователя',
+    tags: ['тикет', 'создать', 'ticket', 'channel'],
+    fields: [
+      { key: 'user', label: 'Пользователь', type: 'select', defaultValue: 'author',
+        options: [
+          { label: 'Автору сообщения', value: 'author' }
+        ]
+      },
+      { key: 'category_id', label: 'ID категории', type: 'string', placeholder: 'ID категории', defaultValue: '' },
+      { key: 'support_role', label: 'ID роли поддержки', type: 'string', placeholder: 'ID роли', defaultValue: '' },
+      { key: 'reason', label: 'Причина', type: 'string', placeholder: 'Нужна помощь', defaultValue: '' }
+    ],
+    hasInput: true,
+    hasOutput: true
+  },
+  {
+    id: 'ticket_close',
+    type: 'action',
+    label: 'Close Ticket',
+    icon: 'x-square',
+    color: '#22D3EE',
+    description: 'Закрывает текущий канал-тикет',
+    tags: ['тикет', 'закрыть', 'close', 'ticket'],
+    fields: [],
+    hasInput: true,
+    hasOutput: false
+  },
+  {
+    id: 'ticket_add_user',
+    type: 'action',
+    label: 'Add to Ticket',
+    icon: 'user-plus',
+    color: '#22D3EE',
+    description: 'Добавляет пользователя в канал-тикет',
+    tags: ['тикет', 'добавить', 'user', 'ticket'],
+    fields: [
+      { key: 'user_id', label: 'ID пользователя', type: 'string', placeholder: '123456789', defaultValue: '' }
+    ],
+    hasInput: true,
+    hasOutput: true
+  },
+  {
+    id: 'ticket_remove_user',
+    type: 'action',
+    label: 'Remove from Ticket',
+    icon: 'user-x',
+    color: '#22D3EE',
+    description: 'Убирает пользователя из канала-тикета',
+    tags: ['тикет', 'убрать', 'user', 'ticket'],
+    fields: [
+      { key: 'user_id', label: 'ID пользователя', type: 'string', placeholder: '123456789', defaultValue: '' }
+    ],
+    hasInput: true,
+    hasOutput: true
+  },
+  // ─── База данных ────────────────────────────────
+  {
+    id: 'db_set',
+    type: 'action',
+    label: 'DB Set',
+    icon: 'save',
+    color: '#22D3EE',
+    description: 'Сохраняет значение в базу данных по ключу',
+    tags: ['база', 'данных', 'db', 'save', 'persist'],
+    fields: [
+      { key: 'key', label: 'Ключ', type: 'string', placeholder: 'user_balance', defaultValue: '' },
+      { key: 'value', label: 'Значение', type: 'string', placeholder: '100', defaultValue: '' }
+    ],
+    hasInput: true,
+    hasOutput: true
+  },
+  {
+    id: 'db_get',
+    type: 'action',
+    label: 'DB Get',
+    icon: 'search',
+    color: '#22D3EE',
+    description: 'Получает значение из базы данных по ключу',
+    tags: ['база', 'данных', 'db', 'get', 'load'],
+    fields: [
+      { key: 'key', label: 'Ключ', type: 'string', placeholder: 'user_balance', defaultValue: '' },
+      { key: 'var_name', label: 'Сохранить в переменную', type: 'string', placeholder: 'balance', defaultValue: '' }
+    ],
+    hasInput: true,
+    hasOutput: true
+  },
+  {
+    id: 'db_delete',
+    type: 'action',
+    label: 'DB Delete',
+    icon: 'trash-2',
+    color: '#22D3EE',
+    description: 'Удаляет запись из базы данных по ключу',
+    tags: ['база', 'данных', 'db', 'delete', 'remove'],
+    fields: [
+      { key: 'key', label: 'Ключ', type: 'string', placeholder: 'user_balance', defaultValue: '' }
+    ],
+    hasInput: true,
+    hasOutput: true
+  },
+  {
+    id: 'db_has',
+    type: 'action',
+    label: 'DB Has',
+    icon: 'check-circle',
+    color: '#22D3EE',
+    description: 'Проверяет, существует ли ключ в базе данных',
+    tags: ['база', 'данных', 'db', 'has', 'exists'],
+    fields: [
+      { key: 'key', label: 'Ключ', type: 'string', placeholder: 'user_balance', defaultValue: '' },
+      { key: 'var_name', label: 'Сохранить в переменную', type: 'string', placeholder: 'exists', defaultValue: '' }
+    ],
+    hasInput: true,
+    hasOutput: true
+  },
+  // ─── Компоненты (Кнопки, Меню, Модалки) ─────
+  {
+    id: 'send_components',
+    type: 'action',
+    label: 'Send with Buttons',
+    icon: 'mouse-pointer',
+    color: '#22D3EE',
+    description: 'Отправляет сообщение с кнопками или select menu',
+    tags: ['кнопки', 'buttons', 'components', 'action row'],
+    fields: [
+      { key: 'content', label: 'Текст сообщения', type: 'string', placeholder: 'Выберите опцию:', defaultValue: '' },
+      { key: 'components', label: 'Кнопки (JSON)', type: 'string', placeholder: '[{"type":"button","label":"Click","custom_id":"btn_1","style":"primary"}]', defaultValue: '[]' },
+      { key: 'embed', label: 'Добавить embed', type: 'boolean', defaultValue: false },
+      { key: 'embed_title', label: 'Embed заголовок', type: 'string', placeholder: '', defaultValue: '' },
+      { key: 'embed_description', label: 'Embed описание', type: 'string', placeholder: '', defaultValue: '' }
+    ],
+    hasInput: true,
+    hasOutput: true
+  },
+  {
+    id: 'respond_modal',
+    type: 'action',
+    label: 'Respond Modal',
+    icon: 'file-text',
+    color: '#22D3EE',
+    description: 'Отвечает на взаимодействие модальным окном',
+    tags: ['модалка', 'modal', 'form', 'popup'],
+    fields: [
+      { key: 'title', label: 'Заголовок', type: 'string', placeholder: 'Форма ввода', defaultValue: '' },
+      { key: 'custom_id', label: 'Custom ID', type: 'string', placeholder: 'my_modal', defaultValue: '' },
+      { key: 'inputs', label: 'Поля ввода (JSON)', type: 'string', placeholder: '[{"label":"Name","custom_id":"name","placeholder":"Enter name","style":"short","required":true}]', defaultValue: '[]' }
+    ],
+    hasInput: true,
+    hasOutput: true
+  },
   // ─── Музыка ─────────────────────────────────
   {
     id: 'play_music',

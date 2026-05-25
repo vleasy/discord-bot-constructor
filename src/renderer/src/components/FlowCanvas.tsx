@@ -15,9 +15,10 @@ import {
 import '@xyflow/react/dist/style.css'
 import { useEditorStore } from '../store/editorStore'
 import BlockNode from '../nodes/BlockNode'
+import GroupNode from '../nodes/GroupNode'
 import DiscordEdge from '../edges/DiscordEdge'
 
-const nodeTypes = { blockNode: BlockNode }
+const nodeTypes = { blockNode: BlockNode, groupNode: GroupNode }
 const edgeTypes = { discordEdge: DiscordEdge }
 
 export function FlowCanvas() {

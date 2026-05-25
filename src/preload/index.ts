@@ -26,6 +26,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       const handler = (_event: Electron.IpcRendererEvent, data: any) => callback(data)
       ipcRenderer.on('bot:log', handler)
       return () => ipcRenderer.removeListener('bot:log', handler)
-    }
+    },
+    deploy: (token: string, commands: any[]) => ipcRenderer.invoke('bot:deploy', token, commands)
   }
 })

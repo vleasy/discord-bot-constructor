@@ -5,8 +5,10 @@ import { useEditorStore } from './editorStore'
 interface ProjectState {
   showExportDialog: boolean
   showCodePreview: boolean
+  showBotPanel: boolean
   toggleExportDialog: () => void
   toggleCodePreview: () => void
+  toggleBotPanel: () => void
   saveProject: (nodes: Node[], edges: Edge[]) => Promise<void>
   exportPlugin: (code: string, ext: string) => Promise<void>
 }
@@ -14,9 +16,11 @@ interface ProjectState {
 export const useProjectStore = create<ProjectState>((set) => ({
   showExportDialog: false,
   showCodePreview: false,
+  showBotPanel: false,
 
   toggleExportDialog: () => set((s) => ({ showExportDialog: !s.showExportDialog })),
   toggleCodePreview: () => set((s) => ({ showCodePreview: !s.showCodePreview })),
+  toggleBotPanel: () => set((s) => ({ showBotPanel: !s.showBotPanel })),
 
   saveProject: async (nodes, edges) => {
     const { projectName, botToken, botPrefix } = useEditorStore.getState()

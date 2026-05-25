@@ -24,6 +24,7 @@ interface Window {
       stop: (projectId: string) => Promise<boolean>
       status: (projectId: string) => Promise<boolean>
       onLog: (callback: (data: any) => void) => () => void
+      deploy: (token: string, commands: any[]) => Promise<{ success: boolean; count?: number; error?: string }>
     }
   }
 }

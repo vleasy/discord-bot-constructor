@@ -44,4 +44,25 @@ export function setupIPC(mainWindow: BrowserWindow): void {
   ipcMain.handle('bot:status', (_event, projectId: string) => {
     return isBotRunning(projectId)
   })
+
+  ipcMain.handle('bot:deploy', async (_event, token: string, commands: any[]) => {
+    try {
+      const response = await fetch(`https://discord.com/api/v10/applications/@me/commands`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bot ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(commands)
+      })
+      if (!response.ok) {
+        const err = await response.text()
+        return { success: false, error: `HTTP ${response.status}: ${err}` }
+      }
+      const data = await response.json()
+      return { success: true, count: Array.isArray(data) ? data.length : 1 }
+    } catch (e: any) {
+      return { success: false, error: e.message }
+    }
+  })
 }

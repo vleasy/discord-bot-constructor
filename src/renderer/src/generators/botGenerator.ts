@@ -124,8 +124,19 @@ function generateTriggerHandler(node: Node, nodeMap: Map<string, Node>, edgeMap:
     case 'on_unban':
       code.push(`${indent(depth)}client.on('guildBanRemove', async (ban) => {`)
       break
+    case 'on_slash_command':
+      code.push(`${indent(depth)}client.on('interactionCreate', async (interaction) => {`)
+      code.push(`${indent(depth + 1)}if (!interaction.isChatInputCommand()) return;`)
+      if (props.name) code.push(`${indent(depth + 1)}if (interaction.commandName !== '${escapeJS(String(props.name))}') return;`)
+      break
     case 'on_interaction':
       code.push(`${indent(depth)}client.on('interactionCreate', async (interaction) => {`)
+      if (props.interaction_type && props.interaction_type !== 'any') {
+        const typeCheck = props.interaction_type === 'button' ? 'interaction.isButton()' :
+          props.interaction_type === 'select' ? 'interaction.isStringSelectMenu()' :
+          props.interaction_type === 'modal' ? 'interaction.isModalSubmit()' : ''
+        if (typeCheck) code.push(`${indent(depth + 1)}if (!${typeCheck}) return;`)
+      }
       if (props.custom_id) code.push(`${indent(depth + 1)}if (interaction.customId !== '${props.custom_id}') return;`)
       break
     case 'on_typing':
@@ -399,6 +410,228 @@ function generateActionChain(
       code.push(`${indent(depth)}const choices${__uid} = '${escapeJS(String(props.items))}'.split(',').map(s => s.trim());`)
       code.push(`${indent(depth)}const ${cv} = choices${__uid}[Math.floor(Math.random() * choices${__uid}.length)];`)
       code.push(`${indent(depth)}variables['${escapeJS(String(props.var_name))}'] = ${cv};`)
+      break
+    }
+    case 'db_set':
+      code.push(`${indent(depth)}const stmt${__uid} = db.prepare('INSERT OR REPLACE INTO storage (key, value) VALUES (?, ?)');`)
+      code.push(`${indent(depth)}stmt${__uid}.run('${escapeJS(String(props.key))}', String(variables['${escapeJS(String(props.value))}'] || '${escapeJS(String(props.value))}'));`)
+      break
+    case 'db_get': {
+      const gv = String(props.var_name).replace(/[^a-zA-Z0-9_]/g, '_') || `dbval${__uid}`
+      code.push(`${indent(depth)}const row${__uid} = db.prepare('SELECT value FROM storage WHERE key = ?').get('${escapeJS(String(props.key))}');`)
+      code.push(`${indent(depth)}const ${gv} = row${__uid}?.value || null;`)
+      code.push(`${indent(depth)}variables['${escapeJS(String(props.var_name))}'] = ${gv};`)
+      break
+    }
+    case 'db_delete':
+      code.push(`${indent(depth)}db.prepare('DELETE FROM storage WHERE key = ?').run('${escapeJS(String(props.key))}');`)
+      break
+    case 'db_has': {
+      const hv = String(props.var_name).replace(/[^a-zA-Z0-9_]/g, '_') || `dbexists${__uid}`
+      code.push(`${indent(depth)}const row${__uid} = db.prepare('SELECT 1 FROM storage WHERE key = ?').get('${escapeJS(String(props.key))}');`)
+      code.push(`${indent(depth)}const ${hv} = !!row${__uid};`)
+      code.push(`${indent(depth)}variables['${escapeJS(String(props.var_name))}'] = ${hv};`)
+      break
+    }
+    case 'send_components': {
+      code.push(`${indent(depth)}const row${__uid} = new ActionRowBuilder()`)
+      const comps = props.components || []
+      if (comps.length > 0) {
+        comps.forEach((comp: any, i: number) => {
+          if (comp.type === 'button') {
+            const style = String(comp.style || 'primary')
+            const styleMap: Record<string, string> = { primary: 'Primary', secondary: 'Secondary', success: 'Success', danger: 'Danger', link: 'Link' }
+            code.push(`${indent(depth + 1)}.addComponents(new ButtonBuilder()`)
+            code.push(`${indent(depth + 2)}.setCustomId('${escapeJS(String(comp.custom_id || 'btn_' + i))}')`)
+            code.push(`${indent(depth + 2)}.setLabel('${escapeJS(String(comp.label || 'Button'))}')`)
+            code.push(`${indent(depth + 2)}.setStyle(ButtonStyle.${styleMap[style] || 'Primary'})`)
+            if (comp.emoji) code.push(`${indent(depth + 2)}.setEmoji('${escapeJS(String(comp.emoji))}')`)
+            if (comp.url) code.push(`${indent(depth + 2)}.setURL('${comp.url}')`)
+            code.push(`${indent(depth + 1)})`)
+          } else if (comp.type === 'select') {
+            code.push(`${indent(depth + 1)}.addComponents(new StringSelectMenuBuilder()`)
+            code.push(`${indent(depth + 2)}.setCustomId('${escapeJS(String(comp.custom_id || 'select_' + i))}')`)
+            code.push(`${indent(depth + 2)}.setPlaceholder('${escapeJS(String(comp.placeholder || 'Choose...'))}')`)
+            const opts = comp.options || []
+            opts.forEach((opt: any, j: number) => {
+              code.push(`${indent(depth + 2)}.addOptions({ label: '${escapeJS(String(opt.label))}', value: '${escapeJS(String(opt.value))}'${opt.description ? `, description: '${escapeJS(String(opt.description))}'` : ''}${opt.emoji ? `, emoji: '${opt.emoji}'` : ''} })`)
+            })
+            code.push(`${indent(depth + 1)})`)
+          }
+        })
+      }
+      code.push(`${indent(depth)};`)
+      code.push(`${indent(depth)}const embed${__uid} = ${props.embed ? `{ title: '${escapeJS(String(props.embed_title))}', description: '${escapeJS(String(props.embed_description))}' }` : 'null'};`)
+      code.push(`${indent(depth)}const msgPayload${__uid} = { content: '${escapeJS(String(props.content))}', components: [row${__uid}] };`)
+      code.push(`${indent(depth)}if (embed${__uid}) msgPayload${__uid}.embeds = [embed${__uid}];`)
+      code.push(`${indent(depth)}await message.channel.send(msgPayload${__uid});`)
+      break
+    }
+    case 'respond_modal':
+      code.push(`${indent(depth)}const modal${__uid} = new ModalBuilder()`)
+      code.push(`${indent(depth + 1)}.setCustomId('${escapeJS(String(props.custom_id || 'modal_1'))}')`)
+      code.push(`${indent(depth + 1)}.setTitle('${escapeJS(String(props.title || 'Modal'))}')`)
+      const inputs = props.inputs || []
+      inputs.forEach((inp: any, i: number) => {
+        code.push(`${indent(depth + 1)}.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder()`)
+        code.push(`${indent(depth + 2)}.setCustomId('${escapeJS(String(inp.custom_id || 'input_' + i))}')`)
+        code.push(`${indent(depth + 2)}.setLabel('${escapeJS(String(inp.label || 'Input'))}')`)
+        code.push(`${indent(depth + 2)}.setStyle(TextInputStyle.${inp.style === 'paragraph' ? 'Paragraph' : 'Short'})`)
+        code.push(`${indent(depth + 2)}.setPlaceholder('${escapeJS(String(inp.placeholder || ''))}')`)
+        if (inp.required !== false) code.push(`${indent(depth + 2)}.setRequired(true)`)
+        code.push(`${indent(depth + 1)})))`)
+      })
+      code.push(`${indent(depth)};`)
+      code.push(`${indent(depth)}await interaction.showModal(modal${__uid});`)
+      break
+    case 'economy_balance':
+    case 'economy_add':
+    case 'economy_remove':
+    case 'economy_set':
+    case 'economy_transfer': {
+      const uid = __uid
+      const uid2 = uid + 1
+      if (def.id === 'economy_transfer') {
+        code.push(`${indent(depth)}const sender${uid} = message.member || message.author;`)
+        code.push(`${indent(depth)}const receiver${uid} = message.mentions.members?.first() || message.mentions.users?.first();`)
+        code.push(`${indent(depth)}if (!receiver${uid}) return;`)
+        code.push(`${indent(depth)}const senderId${uid} = sender${uid}.id;`)
+        code.push(`${indent(depth)}const receiverId${uid} = receiver${uid}.id;`)
+        code.push(`${indent(depth)}const transferAmount${uid} = ${Number(props.amount) || 100};`)
+        code.push(`${indent(depth)}const senderRow${uid} = db.prepare('SELECT balance FROM economy WHERE id = ?').get(senderId${uid});`)
+        code.push(`${indent(depth)}const senderBal${uid} = senderRow${uid}?.balance || 0;`)
+        code.push(`${indent(depth)}if (senderBal${uid} < transferAmount${uid}) {`)
+        code.push(`${indent(depth + 1)}await message.reply('Недостаточно средств');`)
+        code.push(`${indent(depth + 1)}return;`)
+        code.push(`${indent(depth)}}`)
+        code.push(`${indent(depth)}db.prepare('INSERT INTO economy (id, balance) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET balance = balance + ?').run(receiverId${uid}, transferAmount${uid}, transferAmount${uid});`)
+        code.push(`${indent(depth)}db.prepare('UPDATE economy SET balance = balance - ? WHERE id = ?').run(transferAmount${uid}, senderId${uid});`)
+        code.push(`${indent(depth)}await message.reply(\`Переведено \${transferAmount${uid}} монет\`);`)
+      } else {
+        const econTargetVar = String(props.var_name || '').replace(/[^a-zA-Z0-9_]/g, '_') || `econ${uid}`
+        const targetVarName = String(props.var_name || '')
+        code.push(...getTargetCode(String(props.target), uid, props))
+        if (def.id === 'economy_balance') {
+          code.push(`${indent(depth)}const econRow${uid} = db.prepare('SELECT balance FROM economy WHERE id = ?').get(target${uid}.id);`)
+          code.push(`${indent(depth)}const ${econTargetVar} = econRow${uid}?.balance || 0;`)
+          if (targetVarName) code.push(`${indent(depth)}variables['${escapeJS(targetVarName)}'] = ${econTargetVar};`)
+        } else if (def.id === 'economy_add') {
+          code.push(`${indent(depth)}db.prepare('INSERT INTO economy (id, balance) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET balance = balance + ?').run(target${uid}.id, ${Number(props.amount) || 100}, ${Number(props.amount) || 100});`)
+        } else if (def.id === 'economy_remove') {
+          code.push(`${indent(depth)}db.prepare('INSERT INTO economy (id, balance) VALUES (?, 0) ON CONFLICT(id) DO UPDATE SET balance = MAX(0, balance - ?)').run(target${uid}.id, ${Number(props.amount) || 100});`)
+        } else if (def.id === 'economy_set') {
+          code.push(`${indent(depth)}db.prepare('INSERT INTO economy (id, balance) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET balance = ?').run(target${uid}.id, ${Number(props.amount) || 0}, ${Number(props.amount) || 0});`)
+        }
+      }
+      break
+    }
+    case 'economy_daily': {
+      const dUid = __uid
+      code.push(`${indent(depth)}const userId${dUid} = message.author.id;`)
+      code.push(`${indent(depth)}const today${dUid} = Math.floor(Date.now() / 86400000);`)
+      code.push(`${indent(depth)}const dailyRow${dUid} = db.prepare('SELECT lastDaily FROM economy WHERE id = ?').get(userId${dUid});`)
+      code.push(`${indent(depth)}const lastDay${dUid} = dailyRow${dUid}?.lastDaily || 0;`)
+      code.push(`${indent(depth)}if (lastDay${dUid} >= today${dUid}) {`)
+      code.push(`${indent(depth + 1)}await message.reply('Вы уже получили ежедневную награду сегодня');`)
+      code.push(`${indent(depth)}} else {`)
+      code.push(`${indent(depth + 1)}db.prepare('INSERT INTO economy (id, balance, lastDaily) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET balance = balance + ?, lastDaily = ?').run(userId${dUid}, ${Number(props.amount) || 200}, today${dUid}, ${Number(props.amount) || 200}, today${dUid});`)
+      code.push(`${indent(depth + 1)}await message.reply(\`Получено \${${Number(props.amount) || 200}} монет! (ежедневная награда)\`);`)
+      code.push(`${indent(depth)}}`)
+      break
+    }
+    case 'economy_leaderboard': {
+      const lbVar = String(props.var_name || '').replace(/[^a-zA-Z0-9_]/g, '_') || `lb${__uid}`
+      code.push(`${indent(depth)}const ${lbVar} = db.prepare('SELECT id, balance FROM economy ORDER BY balance DESC LIMIT 10').all();`)
+      if (String(props.var_name)) code.push(`${indent(depth)}variables['${escapeJS(String(props.var_name))}'] = ${lbVar};`)
+      break
+    }
+    case 'leveling_add_xp': {
+      const lu = __uid
+      code.push(...getTargetCode(String(props.target), lu, props))
+      code.push(`${indent(depth)}const xp${lu} = ${Number(props.amount) || 15};`)
+      code.push(`${indent(depth)}db.prepare('INSERT INTO levels (id, xp, level) VALUES (?, ?, 1) ON CONFLICT(id) DO UPDATE SET xp = xp + ?').run(target${lu}.id, xp${lu});`)
+      code.push(`${indent(depth)}const lvlRow${lu} = db.prepare('SELECT xp, level FROM levels WHERE id = ?').get(target${lu}.id);`)
+      code.push(`${indent(depth)}const curXp${lu} = lvlRow${lu}?.xp || 0;`)
+      code.push(`${indent(depth)}const curLevel${lu} = lvlRow${lu}?.level || 1;`)
+      code.push(`${indent(depth)}const newLevel${lu} = Math.floor(Math.sqrt(curXp${lu} / 100)) + 1;`)
+      code.push(`${indent(depth)}if (newLevel${lu} > curLevel${lu}) {`)
+      code.push(`${indent(depth + 1)}db.prepare('UPDATE levels SET level = ? WHERE id = ?').run(newLevel${lu}, target${lu}.id);`)
+      code.push(`${indent(depth + 1)}await message.channel.send(\`\${target${lu}.displayName || target${lu}.username} повысил уровень до \${newLevel${lu}}!\`);`)
+      code.push(`${indent(depth)}}`)
+      break
+    }
+    case 'leveling_get_level': {
+      const lgu = __uid
+      const lv = String(props.var_name || '').replace(/[^a-zA-Z0-9_]/g, '_') || `rank${lgu}`
+      code.push(...getTargetCode(String(props.target), lgu, props))
+      code.push(`${indent(depth)}const levelRow${lgu} = db.prepare('SELECT xp, level FROM levels WHERE id = ?').get(target${lgu}.id);`)
+      code.push(`${indent(depth)}const ${lv} = levelRow${lgu} || { xp: 0, level: 1 };`)
+      if (String(props.var_name)) code.push(`${indent(depth)}variables['${escapeJS(String(props.var_name))}'] = ${lv};`)
+      break
+    }
+    case 'leveling_leaderboard': {
+      const llv = String(props.var_name || '').replace(/[^a-zA-Z0-9_]/g, '_') || `lb${__uid}`
+      code.push(`${indent(depth)}const ${llv} = db.prepare('SELECT id, xp, level FROM levels ORDER BY level DESC, xp DESC LIMIT 10').all();`)
+      if (String(props.var_name)) code.push(`${indent(depth)}variables['${escapeJS(String(props.var_name))}'] = ${llv};`)
+      break
+    }
+    case 'ticket_create_panel': {
+      const pu = __uid
+      const chId = String(props.channel_id)
+      code.push(`${indent(depth)}const panelChannel${pu} = ${chId ? `await client.channels.fetch('${chId}').catch(() => null)` : 'message.channel'};`)
+      code.push(`${indent(depth)}if (panelChannel${pu}) {`)
+      code.push(`${indent(depth + 1)}const row${pu} = new ActionRowBuilder().addComponents(`)
+      code.push(`${indent(depth + 2)}new ButtonBuilder().setCustomId('create_ticket').setLabel('${escapeJS(String(props.button_label || 'Создать тикет'))}').setStyle(ButtonStyle.Primary)`)
+      code.push(`${indent(depth + 1)});`)
+      code.push(`${indent(depth + 1)}await panelChannel${pu}.send({`)
+      code.push(`${indent(depth + 2)}embeds: [{ title: '${escapeJS(String(props.title || 'Support Ticket'))}', description: '${escapeJS(String(props.description || 'Нажмите кнопку для создания тикета'))}', color: 0x6366f1 }],`)
+      code.push(`${indent(depth + 2)}components: [row${pu}]`)
+      code.push(`${indent(depth + 1)}});`)
+      code.push(`${indent(depth)}}`)
+      break
+    }
+    case 'ticket_create': {
+      const tcu = __uid
+      const catId = String(props.category_id)
+      const suppRole = String(props.support_role)
+      code.push(`${indent(depth)}const ticketUser${tcu} = message.author;`)
+      code.push(`${indent(depth)}const ticketChannel${tcu} = await message.guild?.channels.create({`)
+      code.push(`${indent(depth + 1)}name: \`ticket-\${ticketUser${tcu}.username.toLowerCase()}\`,`)
+      code.push(`${indent(depth + 1)}type: ChannelType.GuildText,`)
+      code.push(`${indent(depth + 1)}parent: '${catId}',`)
+      code.push(`${indent(depth + 1)}permissionOverwrites: [`)
+      code.push(`${indent(depth + 2)}{ id: message.guild.id, deny: ['ViewChannel'] },`)
+      code.push(`${indent(depth + 2)}{ id: ticketUser${tcu}.id, allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory'] },`)
+      if (suppRole) code.push(`${indent(depth + 2)}{ id: '${suppRole}', allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory'] },`)
+      code.push(`${indent(depth + 1)}]`)
+      code.push(`${indent(depth)}});`)
+      code.push(`${indent(depth)}if (ticketChannel${tcu}) {`)
+      code.push(`${indent(depth + 1)}await ticketChannel${tcu}.send({ content: \`Добро пожаловать, \${ticketUser${tcu}}! ${escapeJS(String(props.reason ? 'Причина: ' + props.reason : ''))}\` });`)
+      code.push(`${indent(depth + 1)}await message.reply(\`Тикет создан: \${ticketChannel${tcu}}\`);`)
+      code.push(`${indent(depth)}}`)
+      break
+    }
+    case 'ticket_close':
+      code.push(`${indent(depth)}const closeChannel${__uid} = message.channel;`)
+      code.push(`${indent(depth)}if (closeChannel${__uid}.name?.startsWith('ticket-')) {`)
+      code.push(`${indent(depth + 1)}await closeChannel${__uid}.send('Тикет будет закрыт через 5 секунд...');`)
+      code.push(`${indent(depth + 1)}setTimeout(() => closeChannel${__uid}.delete().catch(() => {}), 5000);`)
+      code.push(`${indent(depth)}}`)
+      break
+    case 'ticket_add_user': {
+      const au = __uid
+      code.push(`${indent(depth)}if (message.channel.name?.startsWith('ticket-')) {`)
+      code.push(`${indent(depth + 1)}const addUser${au} = await message.guild?.members.fetch('${String(props.user_id)}').catch(() => null);`)
+      code.push(`${indent(depth + 1)}if (addUser${au}) await message.channel.permissionOverwrites.create(addUser${au}.id, { ViewChannel: true, SendMessages: true, ReadMessageHistory: true });`)
+      code.push(`${indent(depth)}}`)
+      break
+    }
+    case 'ticket_remove_user': {
+      const ru = __uid
+      code.push(`${indent(depth)}if (message.channel.name?.startsWith('ticket-')) {`)
+      code.push(`${indent(depth + 1)}const removeUser${ru} = await message.guild?.members.fetch('${String(props.user_id)}').catch(() => null);`)
+      code.push(`${indent(depth + 1)}if (removeUser${ru}) await message.channel.permissionOverwrites.delete(removeUser${ru}.id).catch(() => {});`)
+      code.push(`${indent(depth)}}`)
       break
     }
     case 'play_music':
@@ -721,10 +954,31 @@ export function generateBot(nodes: Node[], edges: Edge[], prefix: string, token:
   const safePrefix = escapeJS(prefix)
   const safeToken = escapeJS(token)
 
-  return `const { Client, GatewayIntentBits, ActivityType, ChannelType } = require('discord.js');
+  // Build slash commands array for registration
+  const slashNodes = nodes.filter((n) => {
+    const def = getBlockById(n.data.definitionId)
+    return def?.id === 'on_slash_command'
+  })
+  const slashCommandsJson = slashNodes.map((n) => {
+    const p = n.data.properties || {}
+    let opts: any[] = []
+    try { opts = JSON.parse(p.options || '[]') } catch {}
+    const cmd: any = { name: p.name || 'command', description: p.description || 'No description' }
+    if (opts.length > 0) cmd.options = opts
+    return JSON.stringify(cmd)
+  }).join(',\n')
 
-const token = '${safeToken}';
-const prefix = '${safePrefix}';
+  return `const { Client, GatewayIntentBits, ActivityType, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, REST, Routes } = require('discord.js');
+const Database = require('better-sqlite3');
+const path = require('path');
+
+const token = process.env.DISCORD_TOKEN || '${safeToken}';
+const prefix = process.env.PREFIX || '${safePrefix}';
+const db = new Database(path.join(__dirname, 'data.db'));
+
+db.exec(\`CREATE TABLE IF NOT EXISTS storage (key TEXT PRIMARY KEY, value TEXT)\`);
+db.exec(\`CREATE TABLE IF NOT EXISTS economy (id TEXT PRIMARY KEY, balance INTEGER DEFAULT 100, lastDaily INTEGER DEFAULT 0)\`);
+db.exec(\`CREATE TABLE IF NOT EXISTS levels (id TEXT PRIMARY KEY, xp INTEGER DEFAULT 0, level INTEGER DEFAULT 1)\`);
 
 if (!token) {
   console.error('[ОШИБКА] Не указан токен бота');
@@ -746,9 +1000,23 @@ const client = new Client({
 const cooldowns = new Map();
 const variables = {};
 
-client.on('ready', () => {
+client.on('ready', async () => {
   console.log('[ГОТОВ] Бот запущен как ' + client.user.tag);
   client.user.setActivity(prefix + 'help', { type: ActivityType.Playing });
+
+  // Register slash commands
+  const commands = [
+${slashCommandsJson}
+  ];
+  if (commands.length > 0) {
+    try {
+      const rest = new REST({ version: '10' }).setToken(token);
+      await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
+      console.log('[SLASH] Зарегистрировано ' + commands.length + ' команд');
+    } catch (e) {
+      console.error('[SLASH] Ошибка регистрации:', e);
+    }
+  }
 });
 
 ${handlers.join('\n\n')}

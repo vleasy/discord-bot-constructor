@@ -4,6 +4,7 @@ import { LeftSidebar } from './LeftSidebar'
 import { RightSidebar } from './RightSidebar'
 import { FlowCanvas } from './FlowCanvas'
 import { CodePreview } from './CodePreview'
+import { BotPanel } from './BotPanel'
 
 export function EditorLayout() {
   return (
@@ -14,6 +15,7 @@ export function EditorLayout() {
         <FlowCanvas />
         <RightSidebar />
       </div>
+      <BotPanel />
       <CodePreview />
     </div>
   )

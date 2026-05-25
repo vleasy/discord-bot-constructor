@@ -9,6 +9,7 @@ import {
   type Connection
 } from '@xyflow/react'
 import { getBlockById } from '../data'
+import type { BlockDefinition } from '../types'
 
 interface HistoryEntry {
   nodes: Node[]
@@ -95,11 +96,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set((state) => {
       nodeCounter++
       const id = `node-${Date.now()}-${nodeCounter}`
+      const def = getBlockById(definitionId)
+      const isGroup = definitionId === 'group'
       const newNode: Node = {
         id,
-        type: 'blockNode',
+        type: isGroup ? 'groupNode' : 'blockNode',
         position,
-        data: { definitionId, properties: {} }
+        data: isGroup
+          ? { definitionId, properties: {}, label: 'Группа', childCount: 0 }
+          : { definitionId, properties: {} }
       }
       return { nodes: [...state.nodes, newNode] }
     })

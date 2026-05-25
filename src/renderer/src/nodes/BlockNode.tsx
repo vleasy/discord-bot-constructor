@@ -6,7 +6,8 @@ import {
   Zap, Play, GitBranch, Variable, MessageCircle, Terminal, LogIn, LogOut,
   SmilePlus, Volume2, MessageSquare, CornerUpLeft, FileText, UserX, Ban,
   Clock, Shield, ShieldOff, Trash2, Save, Hourglass, Music, Square,
-  ShieldCheck, Search, Dice6, Equal, Repeat, TerminalSquare, Power
+  ShieldCheck, Search, Dice6, Equal, Repeat, TerminalSquare, Power,
+  FolderPlus, MousePointer, Database
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -19,7 +20,8 @@ const iconMap: Record<string, LucideIcon> = {
   hourglass: Hourglass, music: Music, square: Square, 'shield-check': ShieldCheck,
   search: Search, 'dice-6': Dice6, equal: Equal, repeat: Repeat,
   'terminal-square': TerminalSquare, zap: Zap, play: Play, 'git-branch': GitBranch,
-  variable: Variable
+  variable: Variable, 'mouse-pointer': MousePointer, 'check-circle': ShieldCheck,
+  'folder-plus': FolderPlus, database: Database
 }
 
 const categoryGradients: Record<BlockCategory, string> = {
