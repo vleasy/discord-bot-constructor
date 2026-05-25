@@ -2,7 +2,9 @@ import React from 'react'
 import { useEditorStore } from '../store/editorStore'
 import { templates } from '../data/templates'
 import { Button } from './ui/Button'
-import { Sparkles, BookOpen, ArrowRight, MessageCircle, LogIn, Shield } from 'lucide-react'
+import { Sparkles, BookOpen, ArrowRight, MessageCircle, LogIn, Shield, Github } from 'lucide-react'
+
+const GITHUB_URL = 'https://github.com/vleasy'
 
 const iconMap: Record<string, React.ReactNode> = {
   'message-circle': <MessageCircle className="w-5 h-5" />,
@@ -92,6 +94,15 @@ export function WelcomeScreen() {
           </Button>
         </div>
       </div>
+
+      <button
+        onClick={() => window.open(GITHUB_URL, '_blank')}
+        className="fixed bottom-4 left-4 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-500 hover:text-indigo-400 text-[11px] transition-all border border-white/5 hover:border-indigo-500/30"
+        title="Open GitHub"
+      >
+        <Github className="w-3.5 h-3.5" />
+        <span>GitHub</span>
+      </button>
     </div>
   )
 }
